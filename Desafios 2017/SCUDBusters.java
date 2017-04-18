@@ -1,6 +1,8 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Comparator;
 import java.util.Scanner;
 
 public class SCUDBusters {
@@ -63,9 +65,6 @@ class Point {
         return Geometry.angle(Geometry.projection(this, pivot), pivot, this);
     }
 
-    public int compareTo(Point other, Point pivot) {
-        return Double.compare(this.polarAngle(pivot), other.polarAngle(pivot));
-    }
     public String toString() {
         return String.format("(%d,%d)", x, y);
     }
@@ -81,6 +80,11 @@ class Polygon {
         ArrayList<Point> boudingPoints = new ArrayList<>();
         Point pivot = Geometry.findPivot(points);
         // sort points by polar angles (counterclockwise)
+        Collections.sort(points, new Comparator<Point>() {
+            public int compare(Point a, Point b) {
+                return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
+            }
+        });
         // push the points into the stack as you go
         boudingPoints.add(points.remove(0));
         boudingPoints.add(points.remove(1));
