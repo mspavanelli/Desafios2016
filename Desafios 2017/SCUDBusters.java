@@ -58,6 +58,14 @@ class Point {
         this.x = x;
         this.y = y;
     }
+
+    double polarAngle(Point pivot) {
+        return Geometry.angle(Geometry.projection(this, pivot), pivot, this);
+    }
+
+    public int compareTo(Point other, Point pivot) {
+        return Double.compare(this.polarAngle(pivot), other.polarAngle(pivot));
+    }
     public String toString() {
         return String.format("(%d,%d)", x, y);
     }
@@ -153,6 +161,11 @@ class Geometry {
         if ( t >= 3 )
             return new Point[] {p.get(t - 1), p.get(t - 2), p.get(t - 3)};
         return null;
+    }
+
+    // projeção de target em relação a base (eixo x)
+    static Point projection(Point target, Point base) {
+        return new Point(target.x, base.y);
     }
 
 }
