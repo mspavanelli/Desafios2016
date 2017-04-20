@@ -1,6 +1,8 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Comparator;
 import java.util.Scanner;
 
 public class SCUDBusters {
@@ -46,9 +48,8 @@ public class SCUDBusters {
         pontos.add(new Point(50,50));
         pontos.add(new Point(60,50));
         System.out.println(Geometry.findPivot(pontos));
-        //Polygon p = new Polygon(pontos);
-        //System.out.println(p.containsPoint(new Point(2, 1)));
-        System.exit(0);
+        Polygon p = new Polygon(pontos);
+        System.out.println(p.containsPoint(new Point(2, 1)));
     }
 }
 
@@ -58,6 +59,11 @@ class Point {
         this.x = x;
         this.y = y;
     }
+
+    double polarAngle(Point pivot) {
+        return Geometry.angle(Geometry.projection(this, pivot), pivot, this);
+    }
+
     public String toString() {
         return String.format("(%d,%d)", x, y);
     }
@@ -73,6 +79,12 @@ class Polygon {
         ArrayList<Point> boudingPoints = new ArrayList<>();
         Point pivot = Geometry.findPivot(points);
         // sort points by polar angles (counterclockwise)
+        Collections.sort(points, new Comparator<Point>() {
+            public int compare(Point a, Point b) {
+                return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
+            }
+        });
+        // push the points into the stack as you go
         boudingPoints.add(points.remove(0));
         boudingPoints.add(points.remove(1));
         for ( int i = 0; i < points.size(); i++ ) {
@@ -154,6 +166,11 @@ class Geometry {
         if ( t >= 3 )
             return new Point[] {p.get(t - 1), p.get(t - 2), p.get(t - 3)};
         return null;
+    }
+
+    // projeção de target em relação a base (eixo x)
+    static Point projection(Point target, Point base) {
+        return new Point(target.x, base.y);
     }
 
 }
