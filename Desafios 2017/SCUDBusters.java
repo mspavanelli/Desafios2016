@@ -41,15 +41,15 @@ public class SCUDBusters {
     }
     public static void run() {
         ArrayList<Point> pontos = new ArrayList<>();
+        pontos.add(new Point(0,9));
+        pontos.add(new Point(1,3));
         pontos.add(new Point(0,0));
-        pontos.add(new Point(10,0));
-        pontos.add(new Point(10,10));
-        pontos.add(new Point(0,10));
-        pontos.add(new Point(50,50));
-        pontos.add(new Point(60,50));
-        System.out.println(Geometry.findPivot(pontos));
+        pontos.add(new Point(3,2));
+        pontos.add(new Point(4,1));
+        pontos.add(new Point(5,0));
+        // System.out.println(Geometry.findPivot(pontos));
         Polygon p = new Polygon(pontos);
-        System.out.println(p.containsPoint(new Point(2, 1)));
+        // System.out.println(p.containsPoint(new Point(2, 1)));
     }
 }
 
@@ -84,15 +84,12 @@ class Polygon {
                 return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
             }
         });
-        // push the points into the stack as you go
-        boudingPoints.add(points.remove(0));
-        boudingPoints.add(points.remove(1));
-        for ( int i = 0; i < points.size(); i++ ) {
-            while ( rotaObtusa(boudingPoints) ) {
-                boudingPoints.remove(boudingPoints.size() - 2); // remove o penultimo ponto (ele está dentro do poligono)               
-                // i--;
-            }
-        }
+
+        /* 1) Insere os pontos ordenados na lista de vértices */
+        /* 2) Após cada inserção medir angulo formado pelos 3 últimos */
+        /* 3) Caso ângulo seja maior que 180, remover penultimo vertice  */
+        /* 4) Repetir 3 até que seja falso */
+
         return boudingPoints;
     }
 
@@ -145,9 +142,6 @@ class Geometry {
             }
         }
         return pivot;
-    }
-    static ArrayList<Point> sortByPolarAngle(ArrayList<Point> points) {
-        return null;
     }
 
     static double angle(Point p1, Point p2, Point p3) {
