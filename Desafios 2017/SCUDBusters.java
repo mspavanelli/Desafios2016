@@ -73,20 +73,21 @@ class Polygon {
         ArrayList<Point> boudingPoints = new ArrayList<>();
         Point pivot = Geometry.findPivot(points);
         // sort points by polar angles (counterclockwise)
-        // push the points into the stack as you go
         boudingPoints.add(points.remove(0));
         boudingPoints.add(points.remove(1));
-        for ( int i = 2; i < points.size(); i++ ) {
-            boudingPoints.add(points.remove(i));
-            while ( rotaObtusa(boudingPoints) )
+        for ( int i = 0; i < points.size(); i++ ) {
+            while ( rotaObtusa(boudingPoints) ) {
                 boudingPoints.remove(boudingPoints.size() - 2); // remove o penultimo ponto (ele está dentro do poligono)               
+                // i--;
+            }
         }
         return boudingPoints;
     }
 
     public boolean rotaObtusa(ArrayList<Point> points) {
+        if ( points.size() < 3 ) return false;
         Point[] last = Geometry.lastThree(points);
-            return Geometry.angle(last[0], last[1], last[2]) > 180;
+        return Geometry.angle(last[2], last[1], last[0]) > 180;
     }
     // http://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon 
     public boolean containsPoint(Point p) {
