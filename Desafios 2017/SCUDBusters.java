@@ -7,49 +7,33 @@ import java.util.Scanner;
 
 public class SCUDBusters {
     public static void main(String[] args) {
-        run();
-
-        if ( false ) {
-            Scanner s = new Scanner(System.in);
-            List<Point> missiles = new ArrayList<>();
-            List<Polygon> kingdoms = new ArrayList<>();
-            while (s.hasNext()) {
-                int numberOfPoints = s.nextInt();
-                if ( numberOfPoints == -1 ) {
-                    while (s.hasNext())
-                        missiles.add(new Point(s.nextInt(), s.nextInt()));
-                }
-                else {
-                    ArrayList<Point> points = new ArrayList<>();
-                    for ( int i = 0; i < numberOfPoints; i++ )
-                        points.add(new Point(s.nextInt(), s.nextInt()));
-                    kingdoms.add(new Polygon(points));
-                }
+        Scanner s = new Scanner(System.in);
+        List<Point> missiles = new ArrayList<>();
+        List<Polygon> kingdoms = new ArrayList<>();
+        while (s.hasNext()) {
+            int numberOfPoints = s.nextInt();
+            if ( numberOfPoints == -1 ) {
+                while (s.hasNext())
+                    missiles.add(new Point(s.nextInt(), s.nextInt()));
             }
-            double area = 0;
-            Iterator<Polygon> itPolygon = kingdoms.iterator();
-            while ( itPolygon.hasNext() ) {
-                Iterator<Point> itMissile = missiles.iterator();
-                while ( itMissile.hasNext() ) {
-                    Polygon poligonoAtual = itPolygon.next();
-                    if ( poligonoAtual.containsPoint(itMissile.next()) )
-                        area += poligonoAtual.getArea();
-                }
+            else {
+                ArrayList<Point> points = new ArrayList<>();
+                for ( int i = 0; i < numberOfPoints; i++ )
+                    points.add(new Point(s.nextInt(), s.nextInt()));
+                kingdoms.add(new Polygon(points));
             }
-            System.out.println(area);
         }
-    }
-    public static void run() {
-        ArrayList<Point> pontos = new ArrayList<>();
-        pontos.add(new Point(0,9));
-        pontos.add(new Point(1,3));
-        pontos.add(new Point(0,0));
-        pontos.add(new Point(3,2));
-        pontos.add(new Point(4,1));
-        pontos.add(new Point(5,0));
-        // System.out.println(Geometry.findPivot(pontos));
-        Polygon p = new Polygon(pontos);
-        // System.out.println(p.containsPoint(new Point(2, 1)));
+        double area = 0;
+        Iterator<Polygon> itPolygon = kingdoms.iterator();
+        while ( itPolygon.hasNext() ) {
+            Iterator<Point> itMissile = missiles.iterator();
+            Polygon poligonoAtual = itPolygon.next();
+            while ( itMissile.hasNext() ) {
+                if ( poligonoAtual.containsPoint(itMissile.next()) )
+                    area += poligonoAtual.getArea();
+            }
+        }
+        System.out.println(area);
     }
 }
 
@@ -61,6 +45,10 @@ class Point {
     }
 
     double polarAngle(Point pivot) {
+        if ( this.x == pivot.x && this.y == pivot.y )
+            return 0;
+        if ( this.x < pivot.x )
+            return 180 - Geometry.angle(Geometry.projection(this, pivot), pivot, this);    
         return Geometry.angle(Geometry.projection(this, pivot), pivot, this);
     }
 
@@ -74,29 +62,34 @@ class Polygon {
     Polygon(ArrayList<Point> points) {
         vertices = findMinimumBoundingBox(points); 
     }
-    // http://alienryderflex.com/smallest_enclosing_polygon/
     public ArrayList<Point> findMinimumBoundingBox(ArrayList<Point> points) {
         ArrayList<Point> boudingPoints = new ArrayList<>();
+        // determina ponto pivô
         Point pivot = Geometry.findPivot(points);
-        // sort points by polar angles (counterclockwise)
+        // ordena pontos pelo ângula polar (sentido anti-horário)
         Collections.sort(points, new Comparator<Point>() {
             public int compare(Point a, Point b) {
                 return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
             }
         });
 
-        /* 1) Insere os pontos ordenados na lista de vértices */
-        /* 2) Após cada inserção medir angulo formado pelos 3 últimos */
-        /* 3) Caso ângulo seja maior que 180, remover penultimo vertice  */
-        /* 4) Repetir 3 até que seja falso */
+        // 1) Insere os pontos ordenados na lista de vértices
+        // 2) Após cada inserção medir angulo formado pelos 3 últimos
+        // 3) Caso ângulo seja maior que 180, remover penultimo vertice
+        // 4) Repetir 3 até que seja falso
 
+        while ( points.size() > 0 ) {
+            boudingPoints.add(points.remove(0));
+            while (rotaObtusa(boudingPoints) )
+                boudingPoints.remove(boudingPoints.size() - 2);
+        }
         return boudingPoints;
     }
 
     public boolean rotaObtusa(ArrayList<Point> points) {
-        if ( points.size() < 3 ) return false;
-        Point[] last = Geometry.lastThree(points);
-        return Geometry.angle(last[2], last[1], last[0]) > 180;
+        int tamanho = points.size();
+        if ( tamanho < 3 ) return false;
+        return Geometry.counterClockwiseTurn(points.get(tamanho-1), points.get(tamanho-2), points.get(tamanho-3));
     }
     // http://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon 
     public boolean containsPoint(Point p) {
@@ -112,6 +105,7 @@ class Polygon {
     }
 
     public double getArea() {
+        vertices.add(vertices.get(0));
         double total = 0;
         Iterator<Point> it = vertices.iterator();
         Point atual = it.next();
@@ -120,7 +114,12 @@ class Polygon {
             total += (atual.x + prox.x) * (atual.y - prox.y);
             atual = prox;
         }
+        vertices.remove(vertices.size() - 1);
         return Math.abs(total / 2);
+    }
+
+    public String toString() {
+        return this.vertices.toString();
     }
 }
 
@@ -149,6 +148,10 @@ class Geometry {
         double b = distance(p2,p3);
         double c = distance(p1,p3);
         return Math.toDegrees(Math.acos((Math.pow(c, 2) - Math.pow(a, 2) - Math.pow(b,2)) / -(2 * a * b)));
+    }
+
+    static boolean counterClockwiseTurn(Point p1, Point p2, Point p3) {
+        return (p2.x - p1.x) * (p3.y - p1.y) > (p2.y - p1.y) * (p3.x - p1.x);
     }
 
     static double distance(Point a, Point b) {
