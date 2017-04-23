@@ -35,6 +35,7 @@ public class SCUDBusters {
             }
         }
         System.out.printf(String.format(Locale.US, "%.2f\n", area));
+        // System.out.printf("%.2f\n", area);
     }
 }
 
@@ -53,6 +54,8 @@ class Point {
     double polarAngle(Point pivot) {
         if ( this.x == pivot.x && this.y == pivot.y )
             return 0;
+        if ( this.x == pivot.x )
+            return 90;
         if ( this.x < pivot.x )
             return 180 - Geometry.angle(Geometry.projection(this, pivot), pivot, this);    
         return Geometry.angle(Geometry.projection(this, pivot), pivot, this);
@@ -66,7 +69,7 @@ class Point {
 class Polygon {
     ArrayList<Point> vertices;
     Polygon(ArrayList<Point> points) {
-        vertices = findMinimumBoundingBox(points); 
+        vertices = findMinimumBoundingBox(points);
     }
     public ArrayList<Point> findMinimumBoundingBox(ArrayList<Point> points) {
         ArrayList<Point> boudingPoints = new ArrayList<>();
@@ -78,6 +81,7 @@ class Polygon {
                 return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
             }
         });
+        // System.out.println(points);
 
         // 1) Insere os pontos ordenados na lista de vértices
         // 2) Após cada inserção medir angulo formado pelos 3 últimos
