@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Iterator;
 import java.util.Comparator;
 import java.util.Scanner;
@@ -33,13 +34,18 @@ public class SCUDBusters {
                     area += poligonoAtual.getArea();
             }
         }
-        System.out.println(area);
+        System.out.printf(String.format(Locale.US, "%.2f\n", area));
     }
 }
 
 class Point {
-    int x, y;
+    double x, y;
     Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    Point(double x, double y) {
         this.x = x;
         this.y = y;
     }
@@ -53,7 +59,7 @@ class Point {
     }
 
     public String toString() {
-        return String.format("(%d,%d)", x, y);
+        return String.format("(%.1f,%.1f)", x, y);
     }
 }
 
@@ -86,22 +92,75 @@ class Polygon {
         return boudingPoints;
     }
 
+    public boolean containsPoint(Point p) {
+        // busca valores extremos
+        int minX = (int) vertices.get(0).x;
+        int maxX = (int) minX;
+        int minY = (int) vertices.get(0).y;
+        int maxY = (int) minY;
+        Iterator it = vertices.iterator();
+        while ( it.hasNext() ) {
+            Point atual = (Point) it.next();
+            if ( atual.x < minX ) minX = (int) atual.x;
+            if ( atual.x > maxX ) maxX = (int) atual.x;
+            if ( atual.y < minY ) minY = (int) atual.y;
+            if ( atual.y > maxY ) maxY = (int) atual.y;
+        }
+        if ( p.x < minX || p.x > maxX || p.y < minY || p.y > maxY )
+            return false;
+
+        if ( wn(p) )
+            return true;
+        else if ( pointOnEdge(p) )
+            return true;
+        return false;
+    }
+
+    // retorna verdadeiro se o ponto estiver dentro dos limites do polígono
+    public boolean wn(Point p) {
+        int windingNumber = 0;
+        vertices.add(vertices.get(0));
+        for ( int i = 0; i < vertices.size() - 1; i++ ) {
+            if ( vertices.get(i).y < p.y ) {
+                if ( vertices.get(i+1).y >= p.y ) {
+                    if ( Geometry.counterClockwiseTurn(vertices.get(i), vertices.get(i+1), p) ) {
+                        windingNumber++;
+                    }
+                }
+            }
+            else {
+                if ( vertices.get(i+1).y < p.y ) {
+                    if ( !Geometry.counterClockwiseTurn(vertices.get(i), vertices.get(i+1), p) ) {
+                        windingNumber--;
+                    }
+                }
+            }
+        }
+
+        vertices.remove(vertices.size() - 1);
+        return windingNumber != 0;
+    }
+
+    public boolean pointOnEdge(Point p) {
+        // para cada aresta -> calcular distancia p para aresta (segmento de reta)
+        // se distancia for zero, retorna verdadeiro
+        vertices.add(vertices.get(0));
+        for ( int i = 0; i < vertices.size() - 1; i++ ) {
+            if ( Geometry.distancePointToEdge(p, vertices.get(i), vertices.get(i+1)) == 0 ) {
+                // System.out.printf("P: %s\n", p);
+                // System.out.printf("A: %s - ", vertices.get(i));
+                // System.out.printf("B: %s\n", vertices.get(i+1));
+                return true;
+            }
+        }
+        vertices.remove(vertices.size() - 1);
+        return false;
+    }
+
     public boolean rotaObtusa(ArrayList<Point> points) {
         int tamanho = points.size();
         if ( tamanho < 3 ) return false;
         return Geometry.counterClockwiseTurn(points.get(tamanho-1), points.get(tamanho-2), points.get(tamanho-3));
-    }
-    // http://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon 
-    public boolean containsPoint(Point p) {
-        boolean result = false;
-        int i, j;
-        for ( i = 0, j = vertices.size() - 1; i < vertices.size(); j = i++ ) {
-            if ( (vertices.get(i).y > p.y) != (vertices.get(j).y > p.y) &&
-             (p.x < (vertices.get(j).x - vertices.get(i).x) * (p.y - vertices.get(i).y / (vertices.get(j).y - vertices.get(i).y) + vertices.get(i).x))) {
-                result = !result;
-            }
-        }
-        return result;
     }
 
     public double getArea() {
@@ -123,6 +182,23 @@ class Polygon {
     }
 }
 
+class Vector {
+    Point p;
+    Vector(Point p1, Point p2) {
+        p = new Point(p2.x - p1.x, p2.y - p1.y);
+    }
+
+    public double dotProduct(Vector v) {
+        double ax = p.x;
+        double bx = v.p.x;
+        double ay = p.y;
+        double by = v.p.y;
+        return ax * bx + ay * by;
+    }
+    public String toString() {
+        return String.format("(%.1f,%.1f)", p.x, p.y);
+    }
+}
 // classe com métodos auxiliares de geometria
 class Geometry {
 
@@ -147,7 +223,9 @@ class Geometry {
         double a = distance(p1,p2);
         double b = distance(p2,p3);
         double c = distance(p1,p3);
-        return Math.toDegrees(Math.acos((Math.pow(c, 2) - Math.pow(a, 2) - Math.pow(b,2)) / -(2 * a * b)));
+        double d = Math.toDegrees(Math.acos((Math.pow(c, 2) - Math.pow(a, 2) - Math.pow(b,2)) / -(2 * a * b)));
+        // System.out.printf("%s -> %s <- %s: %.2f\n", p1, p2, p3, d);
+        return d;
     }
 
     static boolean counterClockwiseTurn(Point p1, Point p2, Point p3) {
@@ -158,11 +236,30 @@ class Geometry {
         return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
     }
 
-    static Point[] lastThree(ArrayList<Point> p) {
-        int t = p.size();
-        if ( t >= 3 )
-            return new Point[] {p.get(t - 1), p.get(t - 2), p.get(t - 3)};
-        return null;
+    static double distancePointToEdge(Point p, Point e1, Point e2) {
+        Vector v = new Vector(e1,e2);
+        Vector w = new Vector(e1,p);
+        double c1 = v.dotProduct(w);
+        if ( c1 <= 0 )
+            return Geometry.distance(p, e1);
+        
+        double c2 = v.dotProduct(v);
+        if ( c2 <= c1 )
+            return Geometry.distance(p, e2);
+
+        double b = c1 / c2;
+        Point bv = new Point(v.p.x * b, v.p.y * b);
+        Point pb = new Point(e1.x + bv.x, e1.y + bv.y);
+        // System.out.printf("c1: %.2f | ", c1);
+        // System.out.printf("c2: %.2f\n", c2);
+        // System.out.printf("b:  %.2f\n", b);
+        // System.out.printf("v:  %s | ", v);
+        // System.out.printf("w:  %s\n", w);
+        // System.out.printf("bv: %s\n", bv);
+        // System.out.printf("P0: %s\n", e2);
+        // System.out.printf("Pb: %s\n", pb);
+        return Geometry.distance(p, pb);
+        // return 0;
     }
 
     // projeção de target em relação a base (eixo x)
