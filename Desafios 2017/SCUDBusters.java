@@ -33,13 +33,11 @@ public class SCUDBusters {
                 if ( poligonoAtual.containsPoint(itMissile.next()) && !poligonoAtual.bombardeado ) {
                     double a = poligonoAtual.getArea();
                     poligonoAtual.bombardeado = true;
-                    // System.out.println(a);
                     area += a;
                 }
             }
         }
         System.out.printf(String.format(Locale.US, "%.2f\n", area));
-        // System.out.printf("%.2f\n", area);
     }
 }
 
@@ -60,7 +58,7 @@ class Point {
     }
 
     double polarAngle(Point pivot) {
-        if ( this.x == pivot.x && this.y == pivot.y )
+        if ( this.y == pivot.y )
             return 0;
         if ( this.x == pivot.x )
             return 90;
@@ -79,20 +77,17 @@ class Polygon {
     boolean bombardeado = false;
     Polygon(ArrayList<Point> points) {
         vertices = findMinimumBoundingBox(points);
-        // System.out.println(vertices);
     }
     public ArrayList<Point> findMinimumBoundingBox(ArrayList<Point> points) {
         ArrayList<Point> boudingPoints = new ArrayList<>();
         // determina ponto pivô
         Point pivot = Geometry.findPivot(points);
-        // System.out.println("pivo: " + pivot);
         // ordena pontos pelo ângula polar (sentido anti-horário)
         Collections.sort(points, new Comparator<Point>() {
             public int compare(Point a, Point b) {
                 return Double.compare(a.polarAngle(pivot), b.polarAngle(pivot));
             }
         });
-        // System.out.println(points);
 
         // 1) Insere os pontos ordenados na lista de vértices
         // 2) Após cada inserção medir angulo formado pelos 3 últimos
@@ -101,37 +96,34 @@ class Polygon {
 
         while ( points.size() > 0 ) {
             boudingPoints.add(points.remove(0));
-            while (rotaObtusa(boudingPoints) ) {
+            while (rotaObtusa(boudingPoints) )
                 boudingPoints.remove(boudingPoints.size() - 2);
-            }
         }
-        if ( !boudingPoints.contains(pivot))
-            boudingPoints.add(0, pivot);
+        // if ( !boudingPoints.contains(pivot))
+            // boudingPoints.add(0, pivot);
         return boudingPoints;
     }
 
     public boolean containsPoint(Point p) {
         // busca valores extremos
-        int minX = (int) vertices.get(0).x;
-        int maxX = (int) minX;
-        int minY = (int) vertices.get(0).y;
-        int maxY = (int) minY;
-        Iterator it = vertices.iterator();
-        while ( it.hasNext() ) {
-            Point atual = (Point) it.next();
-            if ( atual.x < minX ) minX = (int) atual.x;
-            if ( atual.x > maxX ) maxX = (int) atual.x;
-            if ( atual.y < minY ) minY = (int) atual.y;
-            if ( atual.y > maxY ) maxY = (int) atual.y;
-        }
-        if ( p.x < minX || p.x > maxX || p.y < minY || p.y > maxY )
-            return false;
+        // int minX = (int) vertices.get(0).x;
+        // int maxX = (int) minX;
+        // int minY = (int) vertices.get(0).y;
+        // int maxY = (int) minY;
+        // Iterator it = vertices.iterator();
+        // while ( it.hasNext() ) {
+        //     Point atual = (Point) it.next();
+        //     if ( atual.x < minX ) minX = (int) atual.x;
+        //     if ( atual.x > maxX ) maxX = (int) atual.x;
+        //     if ( atual.y < minY ) minY = (int) atual.y;
+        //     if ( atual.y > maxY ) maxY = (int) atual.y;
+        // }
+        // if ( p.x < minX || p.x > maxX || p.y < minY || p.y > maxY )
+        //     return false;
 
         if ( wn(p) )
             return true;
-        else if ( pointOnEdge(p) )
-            return true;
-        return false;
+        else return pointOnEdge(p);
     }
 
     // retorna verdadeiro se o ponto estiver dentro dos limites do polígono
@@ -164,12 +156,8 @@ class Polygon {
         // se distancia for zero, retorna verdadeiro
         vertices.add(vertices.get(0));
         for ( int i = 0; i < vertices.size() - 1; i++ ) {
-            if ( Geometry.distancePointToEdge(p, vertices.get(i), vertices.get(i+1)) == 0 ) {
-                // System.out.printf("P: %s\n", p);
-                // System.out.printf("A: %s - ", vertices.get(i));
-                // System.out.printf("B: %s\n", vertices.get(i+1));
+            if ( Geometry.distancePointToEdge(p, vertices.get(i), vertices.get(i+1)) == 0 )
                 return true;
-            }
         }
         vertices.remove(vertices.size() - 1);
         return false;
@@ -241,9 +229,7 @@ class Geometry {
         double a = distance(p1,p2);
         double b = distance(p2,p3);
         double c = distance(p1,p3);
-        double d = Math.toDegrees(Math.acos((Math.pow(c, 2) - Math.pow(a, 2) - Math.pow(b,2)) / -(2 * a * b)));
-        // System.out.printf("%s -> %s <- %s: %.2f\n", p1, p2, p3, d);
-        return d;
+        return Math.toDegrees(Math.acos((Math.pow(c, 2) - Math.pow(a, 2) - Math.pow(b,2)) / -(2 * a * b)));
     }
 
     static boolean counterClockwiseTurn(Point p1, Point p2, Point p3) {
@@ -268,16 +254,7 @@ class Geometry {
         double b = c1 / c2;
         Point bv = new Point(v.p.x * b, v.p.y * b);
         Point pb = new Point(e1.x + bv.x, e1.y + bv.y);
-        // System.out.printf("c1: %.2f | ", c1);
-        // System.out.printf("c2: %.2f\n", c2);
-        // System.out.printf("b:  %.2f\n", b);
-        // System.out.printf("v:  %s | ", v);
-        // System.out.printf("w:  %s\n", w);
-        // System.out.printf("bv: %s\n", bv);
-        // System.out.printf("P0: %s\n", e2);
-        // System.out.printf("Pb: %s\n", pb);
         return Geometry.distance(p, pb);
-        // return 0;
     }
 
     // projeção de target em relação a base (eixo x)
