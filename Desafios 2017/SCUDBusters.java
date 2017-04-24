@@ -30,8 +30,12 @@ public class SCUDBusters {
             Iterator<Point> itMissile = missiles.iterator();
             Polygon poligonoAtual = itPolygon.next();
             while ( itMissile.hasNext() ) {
-                if ( poligonoAtual.containsPoint(itMissile.next()) )
-                    area += poligonoAtual.getArea();
+                if ( poligonoAtual.containsPoint(itMissile.next()) && !poligonoAtual.bombardeado ) {
+                    double a = poligonoAtual.getArea();
+                    poligonoAtual.bombardeado = true;
+                    // System.out.println(a);
+                    area += a;
+                }
             }
         }
         System.out.printf(String.format(Locale.US, "%.2f\n", area));
@@ -51,6 +55,10 @@ class Point {
         this.y = y;
     }
 
+    public boolean equalTo(Point other) {
+        return this.x == other.x && this.y == other.y;
+    }
+
     double polarAngle(Point pivot) {
         if ( this.x == pivot.x && this.y == pivot.y )
             return 0;
@@ -62,19 +70,22 @@ class Point {
     }
 
     public String toString() {
-        return String.format("(%.1f,%.1f)", x, y);
+        return String.format("(%.0f,%.0f)", x, y);
     }
 }
 
 class Polygon {
     ArrayList<Point> vertices;
+    boolean bombardeado = false;
     Polygon(ArrayList<Point> points) {
         vertices = findMinimumBoundingBox(points);
+        // System.out.println(vertices);
     }
     public ArrayList<Point> findMinimumBoundingBox(ArrayList<Point> points) {
         ArrayList<Point> boudingPoints = new ArrayList<>();
         // determina ponto pivô
         Point pivot = Geometry.findPivot(points);
+        // System.out.println("pivo: " + pivot);
         // ordena pontos pelo ângula polar (sentido anti-horário)
         Collections.sort(points, new Comparator<Point>() {
             public int compare(Point a, Point b) {
@@ -90,9 +101,12 @@ class Polygon {
 
         while ( points.size() > 0 ) {
             boudingPoints.add(points.remove(0));
-            while (rotaObtusa(boudingPoints) )
+            while (rotaObtusa(boudingPoints) ) {
                 boudingPoints.remove(boudingPoints.size() - 2);
+            }
         }
+        if ( !boudingPoints.contains(pivot))
+            boudingPoints.add(0, pivot);
         return boudingPoints;
     }
 
